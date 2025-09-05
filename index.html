@@ -1,0 +1,992 @@
++<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Button Game</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const Trophy = () => <span>🏆</span>;
+
+        const RedButtonApp = () => {
+            const [buttons, setButtons] = useState([{ id: 1, x: 50, y: 50, size: 80 }]);
+            const [confetti, setConfetti] = useState([]);
+            const [backgroundColor, setBackgroundColor] = useState('#1f2937');
+            const [shake, setShake] = useState(false);
+            const [ripples, setRipples] = useState([]);
+            const [clickCount, setClickCount] = useState(0);
+            const [particles, setParticles] = useState([]);
+            const [meteors, setMeteors] = useState([]);
+            const [fireworks, setFireworks] = useState([]);
+            const [lightning, setLightning] = useState(false);
+            const [achievements, setAchievements] = useState(new Set());
+            const [recentAchievement, setRecentAchievement] = useState(null);
+            const [showAchievements, setShowAchievements] = useState(false);
+            const [gravity, setGravity] = useState(false);
+            const [matrix, setMatrix] = useState([]);
+            const [snow, setSnow] = useState([]);
+            const [hearts, setHearts] = useState([]);
+            const [zoom, setZoom] = useState(1);
+            const [rotation, setRotation] = useState(0);
+            const [invert, setInvert] = useState(false);
+            const [glitch, setGlitch] = useState(false);
+            const [disco, setDisco] = useState(false);
+            const [effectCounts, setEffectCounts] = useState({});
+            const [lastClickTime, setLastClickTime] = useState(Date.now());
+            const [fastClicks, setFastClicks] = useState([]);
+            const [buttonsCreated, setButtonsCreated] = useState(0);
+            const [buttonsDestroyed, setButtonsDestroyed] = useState(0);
+            const [colorChanges, setColorChanges] = useState(0);
+            const [recentEffects, setRecentEffects] = useState([]);
+            const [consecutiveDays, setConsecutiveDays] = useState(1);
+            const [waitingStart, setWaitingStart] = useState(null);
+
+            // Load saved data from localStorage
+            useEffect(() => {
+                const saved = localStorage.getItem('gameData');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    setAchievements(new Set(data.achievements || []));
+                    setClickCount(data.clickCount || 0);
+                    setEffectCounts(data.effectCounts || {});
+                    setButtonsCreated(data.buttonsCreated || 0);
+                    setButtonsDestroyed(data.buttonsDestroyed || 0);
+                    setColorChanges(data.colorChanges || 0);
+                    setConsecutiveDays(data.consecutiveDays || 1);
+                }
+            }, []);
+
+            const effects = [
+                'move', 'move', 'move', 'move', 'move', 'move', 'move', 'move', 'move', 'move',
+                'duplicate', 'confetti', 'changeColor', 'resize', 'shake', 'ripple',
+                'rainbow', 'spin', 'disappear', 'explode', 'implode', 'meteor', 'fireworks',
+                'lightning', 'gravity', 'matrix', 'snow', 'hearts', 'zoom', 'rotate',
+                'invert', 'glitch', 'disco', 'teleport', 'multiply', 'shrink', 'giant',
+                'speed', 'slow', 'neon', 'vintage', 'portal', 'wave', 'spiral',
+                'bubbles', 'stars', 'lasers', 'morph', 'fade', 'pulse', 'trail', 'vortex',
+                'prism', 'hologram', 'echo', 'storm', 'galaxy', 'crystal', 'phantom',
+                'timeWarp', 'dimension', 'quantum', 'cosmic', 'nebula', 'aurora', 'void',
+                'duplicate', 'confetti', 'shake', 'rainbow', 'fireworks', 'lightning',
+                'matrix', 'snow', 'hearts', 'disco', 'teleport', 'portal', 'bubbles',
+                'stars', 'lasers', 'morph', 'fade', 'pulse', 'trail', 'vortex',
+                'prism', 'hologram', 'echo', 'storm', 'galaxy', 'crystal', 'phantom',
+                'timeWarp', 'dimension', 'quantum', 'cosmic', 'nebula', 'aurora', 'void',
+                'duplicate', 'confetti', 'shake', 'rainbow', 'fireworks', 'lightning',
+                'matrix', 'snow', 'hearts', 'disco', 'teleport', 'portal', 'bubbles',
+                'stars', 'lasers', 'morph', 'fade', 'pulse', 'trail', 'vortex'
+            ];
+
+            const achievementsList = {
+                // Logros básicos
+                'first_click': { name: 'Primer Click', desc: 'Hiciste tu primer click', icon: '👆', rare: false },
+                'click_10': { name: 'Clickeador', desc: '10 clicks realizados', icon: '🖱️', rare: false },
+                'click_25': { name: 'Aficionado', desc: '25 clicks realizados', icon: '👨‍💻', rare: false },
+                'click_50': { name: 'Experto', desc: '50 clicks realizados', icon: '🥉', rare: false },
+                'click_100': { name: 'Centurión', desc: '100 clicks realizados', icon: '🥈', rare: true },
+                'click_250': { name: 'Maestro Click', desc: '250 clicks realizados', icon: '🥇', rare: true },
+                'click_500': { name: 'Leyenda', desc: '500 clicks realizados', icon: '👑', rare: true },
+                'click_1000': { name: 'Dios del Click', desc: '1000 clicks realizados', icon: '🌟', rare: true },
+                'click_2500': { name: 'Trascendental', desc: '2500 clicks realizados', icon: '✨', rare: true },
+                'click_5000': { name: 'Infinito', desc: '5000 clicks realizados', icon: '♾️', rare: true },
+                'click_10000': { name: 'Inmortal', desc: '10000 clicks realizados', icon: '🕹️', rare: true },
+                'click_20000': { name: 'Leyenda Viva', desc: '20000 clicks realizados', icon: '🎮', rare: true },
+                'click_50000': { name: 'Dios del Juego', desc: '50000 clicks realizados', icon: '👾', rare: true },
+
+                // Logros de efectos
+                'duplicate': { name: 'Multiplicador', desc: 'Duplicaste un botón', icon: '🔄', rare: false },
+                'confetti': { name: 'Fiestero', desc: 'Activaste confetti', icon: '🎉', rare: false },
+                'shake': { name: 'Terremoto', desc: 'Hiciste temblar la pantalla', icon: '📳', rare: false },
+                'rainbow': { name: 'Arcoíris', desc: 'Creaste un arcoíris', icon: '🌈', rare: false },
+                'fireworks': { name: 'Pirotécnico', desc: 'Lanzaste fuegos artificiales', icon: '🎆', rare: false },
+                'lightning': { name: 'Thor', desc: 'Invocaste un rayo', icon: '⚡', rare: false },
+                'meteor': { name: 'Apocalipsis', desc: 'Lanzaste meteoritos', icon: '☄️', rare: false },
+                'matrix': { name: 'Neo', desc: 'Entraste a la Matrix', icon: '💊', rare: false },
+                'gravity': { name: 'Newton', desc: 'Activaste la gravedad', icon: '🍎', rare: false },
+                'snow': { name: 'Elsa', desc: 'Hiciste nevar', icon: '❄️', rare: false },
+                'hearts': { name: 'Cupido', desc: 'Llenaste de corazones', icon: '💕', rare: false },
+                'invert': { name: 'Negativo', desc: 'Invertiste los colores', icon: '🔄', rare: false },
+                'glitch': { name: 'Hacker', desc: 'Causaste un glitch', icon: '⚡', rare: false },
+                'disco': { name: 'John Travolta', desc: 'Activaste modo disco', icon: '🕺', rare: false },
+                'giant': { name: 'Gigante', desc: 'Creaste un botón gigante', icon: '🦣', rare: false },
+                'teleport': { name: 'Teletransporte', desc: 'Teletransportaste un botón', icon: '🌀', rare: false },
+                'portal': { name: 'Portal', desc: 'Abriste un portal', icon: '🌌', rare: false },
+                'bubbles': { name: 'Burbujeante', desc: 'Creaste burbujas', icon: '🫧', rare: false },
+                'stars': { name: 'Estrella Fugaz', desc: 'Creaste estrellas', icon: '🌠', rare: false },
+                'lasers': { name: 'Láser', desc: 'Disparaste láseres', icon: '🔫', rare: false },
+                'morph': { name: 'Metamorfosis', desc: 'Cambiaste la forma del botón', icon: '🦋', rare: false },
+                'fade': { name: 'Desvanecimiento', desc: 'Hiciste que el botón desaparezca lentamente', icon: '🌫️', rare: false },
+                'pulse': { name: 'Pulso', desc: 'Hiciste que el botón pulse', icon: '💓', rare: false },
+                'trail': { name: 'Rastro', desc: 'Dejaste un rastro detrás del botón', icon: '🛤️', rare: false },
+                'vortex': { name: 'Vórtice', desc: 'Creaste un vórtice', icon: '🌀', rare: false },
+                'prism': { name: 'Prisma', desc: 'Dividiste la luz en colores', icon: '🔮', rare: false },
+                'hologram': { name: 'Holograma', desc: 'Creaste un holograma', icon: '📡', rare: false },
+                'echo': { name: 'Eco', desc: 'Creaste un eco visual', icon: '🔊', rare: false },
+                'storm': { name: 'Tormenta', desc: 'Creaste una tormenta', icon: '🌩️', rare: false },
+                'galaxy': { name: 'Galaxia', desc: 'Creaste una galaxia', icon: '🌌', rare: false },
+                'crystal': { name: 'Cristal', desc: 'Creaste cristales', icon: '💎', rare: false },
+                'phantom': { name: 'Fantasma', desc: 'Creaste un fantasma', icon: '👻', rare: false },
+                'timeWarp': { name: 'Distorsión Temporal', desc: 'Manipulaste el tiempo', icon: '⏳', rare: false },
+                'dimension': { name: 'Dimensión', desc: 'Abriste una dimensión', icon: '🕳️', rare: false },
+                'quantum': { name: 'Cuántico', desc: 'Activaste un efecto cuántico', icon: '⚛️', rare: false },
+                'cosmic': { name: 'Cósmico', desc: 'Creaste un efecto cósmico', icon: '🌠', rare: false },
+                'nebula': { name: 'Nebulosa', desc: 'Creaste una nebulosa', icon: '☁️', rare: false },
+                'aurora': { name: 'Aurora', desc: 'Creaste una aurora boreal', icon: '🌌', rare: false },
+                'void': { name: 'Vacío', desc: 'Creaste un vacío', icon: '⚫', rare: false },
+
+                // Logros de velocidad
+                'speed_demon': { name: 'Demonio Velocidad', desc: '10 clicks en 5 segundos', icon: '💨', rare: true },
+                'flash': { name: 'Flash', desc: '20 clicks en 10 segundos', icon: '⚡', rare: true },
+                'sonic': { name: 'Sónico', desc: '50 clicks en 30 segundos', icon: '🦔', rare: true },
+
+                // Logros de cantidad
+                'button_collector': { name: 'Coleccionista', desc: 'Tener 5 botones al mismo tiempo', icon: '📦', rare: false },
+                'button_army': { name: 'Ejército', desc: 'Tener 10 botones al mismo tiempo', icon: '⚔️', rare: true },
+                'button_invasion': { name: 'Invasión', desc: 'Tener 20 botones al mismo tiempo', icon: '🚀', rare: true },
+
+                // Logros de efectos específicos
+                'rainbow_master': { name: 'Maestro Arcoíris', desc: 'Activar arcoíris 5 veces', icon: '🌈', rare: false },
+                'lightning_lord': { name: 'Señor del Rayo', desc: 'Activar rayos 10 veces', icon: '⛈️', rare: true },
+                'meteor_shower': { name: 'Lluvia Meteórica', desc: 'Activar meteoritos 7 veces', icon: '🌠', rare: true },
+                'party_animal': { name: 'Animal Fiestero', desc: 'Activar confetti 15 veces', icon: '🎊', rare: false },
+                'disco_king': { name: 'Rey Disco', desc: 'Activar disco 3 veces', icon: '👨‍🎤', rare: true },
+
+                // Logros de tiempo
+                'night_owl': { name: 'Búho Nocturno', desc: 'Jugar después de medianoche', icon: '🦉', rare: false },
+                'early_bird': { name: 'Madrugador', desc: 'Jugar antes de las 6 AM', icon: '🐦', rare: false },
+                'weekend_warrior': { name: 'Guerrero Fin Semana', desc: 'Jugar en sábado o domingo', icon: '⚔️', rare: false },
+
+                // Logros especiales
+                'lucky_seven': { name: 'Siete de la Suerte', desc: 'Hacer exactamente 777 clicks', icon: '🍀', rare: true },
+                'perfectionist': { name: 'Perfeccionista', desc: 'Hacer exactamente 1000 clicks', icon: '💯', rare: true },
+                'unlucky': { name: 'Mala Suerte', desc: 'Hacer exactamente 666 clicks', icon: '😈', rare: true },
+
+                // Logros secretos
+                'secret_combo': { name: 'Combo Secreto', desc: 'Activar 5 efectos seguidos', icon: '🤫', rare: true },
+                'matrix_glitch': { name: 'Glitch Matrix', desc: 'Activar Matrix y Glitch juntos', icon: '🔴', rare: true },
+                'rainbow_disco': { name: 'Arcoíris Disco', desc: 'Activar Arcoíris y Disco juntos', icon: '🌈', rare: true },
+
+                // Logros de paciencia
+                'patient': { name: 'Paciente', desc: 'Esperar 30 segundos sin hacer click', icon: '⏰', rare: false },
+                'zen_master': { name: 'Maestro Zen', desc: 'Esperar 2 minutos sin hacer click', icon: '🧘', rare: true },
+
+                // Logros de destrucción
+                'destroyer': { name: 'Destructor', desc: 'Eliminar 20 botones', icon: '💥', rare: false },
+                'apocalypse': { name: 'Apocalipsis', desc: 'Eliminar 100 botones', icon: '☠️', rare: true },
+
+                // Logros de colores
+                'colorful': { name: 'Colorido', desc: 'Cambiar color 10 veces', icon: '🎨', rare: false },
+                'artist': { name: 'Artista', desc: 'Cambiar color 50 veces', icon: '🖌️', rare: true },
+
+                // Logros finales
+                'all_effects': { name: 'Maestro de Efectos', desc: 'Activar todos los efectos', icon: '🏆', rare: true },
+                'completionist': { name: 'Completista', desc: 'Desbloquear 75% de logros', icon: '💎', rare: true },
+                'ultimate_master': { name: 'Maestro Supremo', desc: 'Desbloquear todos los logros', icon: '🌟', rare: true }
+            };
+
+            const unlockAchievement = (achievement) => {
+                if (!achievements.has(achievement)) {
+                    setAchievements(prev => new Set([...prev, achievement]));
+                    setRecentAchievement(achievement);
+                    setTimeout(() => setRecentAchievement(null), 4000);
+                }
+            };
+
+            const incrementEffectCount = (effect) => {
+                setEffectCounts(prev => ({ ...prev, [effect]: (prev[effect] || 0) + 1 }));
+            };
+
+            const checkSpeedAchievements = () => {
+                const now = Date.now();
+                const newFastClicks = [...fastClicks, now].filter(time => now - time < 30000);
+                setFastClicks(newFastClicks);
+                const recent5sec = newFastClicks.filter(time => now - time < 5000);
+                const recent10sec = newFastClicks.filter(time => now - time < 10000);
+                const recent30sec = newFastClicks.filter(time => now - time < 30000);
+                if (recent5sec.length >= 10) unlockAchievement('speed_demon');
+                if (recent10sec.length >= 20) unlockAchievement('flash');
+                if (recent30sec.length >= 50) unlockAchievement('sonic');
+            };
+
+            const checkComboAchievements = (effect) => {
+                const newRecentEffects = [...recentEffects, effect].slice(-5);
+                setRecentEffects(newRecentEffects);
+
+                if (newRecentEffects.length >= 5) {
+                    unlockAchievement('secret_combo');
+                }
+
+                if (newRecentEffects.includes('matrix') && newRecentEffects.includes('glitch')) {
+                    unlockAchievement('matrix_glitch');
+                }
+                if (newRecentEffects.includes('rainbow') && newRecentEffects.includes('disco')) {
+                    unlockAchievement('rainbow_disco');
+                }
+            };
+
+            const checkWaitingAchievements = () => {
+                if (waitingStart) {
+                    const waitTime = Date.now() - waitingStart;
+                    if (waitTime >= 30000) unlockAchievement('patient');
+                    if (waitTime >= 120000) unlockAchievement('zen_master');
+                }
+            };
+
+            // Verificar logros por clicks
+            useEffect(() => {
+                if (clickCount === 1) unlockAchievement('first_click');
+                if (clickCount === 10) unlockAchievement('click_10');
+                if (clickCount === 25) unlockAchievement('click_25');
+                if (clickCount === 50) unlockAchievement('click_50');
+                if (clickCount === 100) unlockAchievement('click_100');
+                if (clickCount === 250) unlockAchievement('click_250');
+                if (clickCount === 500) unlockAchievement('click_500');
+                if (clickCount === 666) unlockAchievement('unlucky');
+                if (clickCount === 777) unlockAchievement('lucky_seven');
+                if (clickCount === 1000) {
+                    unlockAchievement('click_1000');
+                    unlockAchievement('perfectionist');
+                }
+                if (clickCount === 2500) unlockAchievement('click_2500');
+                if (clickCount === 5000) unlockAchievement('click_5000');
+
+                const now = new Date();
+                const hour = now.getHours();
+                const day = now.getDay();
+
+                if (hour >= 0 && hour < 6) unlockAchievement('early_bird'); if (hour >= 24 || hour < 1)
+                    unlockAchievement('night_owl'); if (day === 0 || day === 6) unlockAchievement('weekend_warrior'); if
+                    (effectCounts.rainbow >= 5) unlockAchievement('rainbow_master');
+                if (effectCounts.lightning >= 10) unlockAchievement('lightning_lord');
+                if (effectCounts.meteor >= 7) unlockAchievement('meteor_shower');
+                if (effectCounts.confetti >= 15) unlockAchievement('party_animal');
+                if (effectCounts.disco >= 3) unlockAchievement('disco_king');
+
+                if (buttons.length >= 5) unlockAchievement('button_collector');
+                if (buttons.length >= 10) unlockAchievement('button_army');
+                if (buttons.length >= 20) unlockAchievement('button_invasion');
+
+                if (buttonsDestroyed >= 20) unlockAchievement('destroyer');
+                if (buttonsDestroyed >= 100) unlockAchievement('apocalypse');
+
+                if (colorChanges >= 10) unlockAchievement('colorful');
+                if (colorChanges >= 50) unlockAchievement('artist');
+
+                const totalAchievements = Object.keys(achievementsList).length;
+                if (achievements.size >= totalAchievements * 0.75) unlockAchievement('completionist');
+                if (achievements.size >= totalAchievements - 1) unlockAchievement('ultimate_master');
+            }, [clickCount, effectCounts, buttons.length, buttonsDestroyed, colorChanges,
+                achievements.size]);
+
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    if (waitingStart) {
+                        checkWaitingAchievements();
+                    }
+                }, 1000);
+
+                return () => clearInterval(interval);
+            }, [waitingStart]);
+
+            // Escape key to close achievements panel
+            useEffect(() => {
+                const handleKeyDown = (event) => {
+                    if (event.key === 'Escape' && showAchievements) {
+                        setShowAchievements(false);
+                    }
+                };
+
+                if (showAchievements) {
+                    document.addEventListener('keydown', handleKeyDown);
+                }
+
+                return () => {
+                    document.removeEventListener('keydown', handleKeyDown);
+                };
+            }, [showAchievements]);
+
+            useEffect(() => {
+                const timers = [];
+
+                if (confetti.length > 0) {
+                    timers.push(setTimeout(() => setConfetti([]), 3000));
+                }
+
+                if (particles.length > 0) {
+                    timers.push(setTimeout(() => setParticles([]), 2000));
+                }
+
+                if (meteors.length > 0) {
+                    timers.push(setTimeout(() => setMeteors([]), 4000));
+                }
+
+                if (fireworks.length > 0) {
+                    timers.push(setTimeout(() => setFireworks([]), 3000));
+                }
+
+                if (lightning) {
+                    timers.push(setTimeout(() => setLightning(false), 200));
+                }
+
+                if (matrix.length > 0) {
+                    timers.push(setTimeout(() => setMatrix([]), 5000));
+                }
+
+                if (snow.length > 0) {
+                    timers.push(setTimeout(() => setSnow([]), 10000));
+                }
+
+                if (hearts.length > 0) {
+                    timers.push(setTimeout(() => setHearts([]), 4000));
+                }
+
+                if (glitch) {
+                    timers.push(setTimeout(() => setGlitch(false), 1000));
+                }
+
+                if (disco) {
+                    timers.push(setTimeout(() => setDisco(false), 5000));
+                }
+
+                if (gravity) {
+                    timers.push(setTimeout(() => setGravity(false), 3000));
+                }
+
+                return () => timers.forEach(timer => clearTimeout(timer));
+            }, [confetti, particles, meteors, fireworks, lightning, matrix, snow, hearts, glitch, disco,
+                gravity]);
+
+            useEffect(() => {
+                if (disco) {
+                    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+                    let colorIndex = 0;
+                    const interval = setInterval(() => {
+                        setBackgroundColor(colors[colorIndex]);
+                        colorIndex = (colorIndex + 1) % colors.length;
+                    }, 100);
+                    return () => clearInterval(interval);
+                }
+            }, [disco]);
+
+            // Save data to localStorage
+            useEffect(() => {
+                const data = {
+                    achievements: [...achievements],
+                    clickCount,
+                    effectCounts,
+                    buttonsCreated,
+                    buttonsDestroyed,
+                    colorChanges,
+                    consecutiveDays
+                };
+                localStorage.setItem('gameData', JSON.stringify(data));
+            }, [achievements, clickCount, effectCounts, buttonsCreated, buttonsDestroyed, colorChanges, consecutiveDays]);
+
+            const createConfetti = (x, y) => {
+                const newConfetti = [];
+                for (let i = 0; i < 30; i++) {
+                    newConfetti.push({
+                        id: Math.random(),
+                        x: x + Math.random() * 200 - 100,
+                        y: y + Math.random() * 200 - 100,
+                        color: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#6c5ce7'][Math.floor(Math.random() * 6)],
+                        delay: Math.random() * 1
+                    });
+                }
+                setConfetti(newConfetti);
+            };
+
+            const createFireworks = (x, y) => {
+                const newFireworks = [];
+                for (let i = 0; i < 50; i++) {
+                    const angle = (i / 50) * 2 * Math.PI;
+                    newFireworks.push({
+                        id: Math.random(),
+                        x: x + Math.cos(angle) * 150,
+                        y: y + Math.sin(angle) * 150,
+                        color: ['#ff1744', '#ff9100', '#ffeb3b', '#4caf50', '#2196f3', '#9c27b0'][Math.floor(Math.random() * 6)],
+                        delay: Math.random() * 0.5
+                    });
+                }
+                setFireworks(newFireworks);
+            };
+
+            const createMeteors = () => {
+                const newMeteors = [];
+                for (let i = 0; i < 8; i++) {
+                    newMeteors.push({
+                        id: Math.random(),
+                        x: Math.random() * 100,
+                        delay: i * 0.3
+                    });
+                }
+                setMeteors(newMeteors);
+            };
+
+            const createMatrix = () => {
+                const newMatrix = [];
+                for (let i = 0; i < 20; i++) {
+                    newMatrix.push({
+                        id: Math.random(),
+                        x: Math.random() * 100,
+                        char: String.fromCharCode(0x30A0 + Math.random() * 96),
+                        delay: Math.random() * 2
+                    });
+                }
+                setMatrix(newMatrix);
+            };
+
+            const createSnow = () => {
+                const newSnow = [];
+                for (let i = 0; i < 50; i++) {
+                    newSnow.push({
+                        id: Math.random(),
+                        x: Math.random() * 100,
+                        size: 5 + Math.random() * 10,
+                        delay: Math.random() * 5
+                    });
+                }
+                setSnow(newSnow);
+            };
+
+            const createHearts = (x, y) => {
+                const newHearts = [];
+                for (let i = 0; i < 15; i++) {
+                    newHearts.push({
+                        id: Math.random(),
+                        x: x + Math.random() * 200 - 100,
+                        y: y + Math.random() * 200 - 100,
+                        delay: Math.random() * 1
+                    });
+                }
+                setHearts(newHearts);
+            };
+
+            const handleButtonClick = (buttonId, buttonX, buttonY) => {
+                    const effect = effects[Math.floor(Math.random() * effects.length)];
+                    setClickCount(prev => prev + 1);
+                    setLastClickTime(Date.now());
+                    setWaitingStart(null);
+
+                    checkSpeedAchievements();
+                    checkComboAchievements(effect);
+                    incrementEffectCount(effect);
+
+                    if (achievementsList[effect]) {
+                        unlockAchievement(effect);
+                    }
+
+                    switch (effect) {
+                        case 'duplicate':
+                            setButtons(prev => {
+                                const newButton = {
+                                    id: Math.random(),
+                                    x: Math.random() * 80 + 10,
+                                    y: Math.random() * 80 + 10,
+                                    size: 60 + Math.random() * 40
+                                };
+                                setButtonsCreated(c => c + 1);
+                                return [...prev, newButton];
+                            });
+                            break;
+
+                        case 'move':
+                            setButtons(prev => prev.map(btn =>
+                                btn.id === buttonId
+                                    ? { ...btn, x: Math.random() * 80 + 10, y: Math.random() * 80 + 10 }
+                                    : btn
+                            ));
+                            break;
+
+                        case 'teleport':
+                            unlockAchievement('teleport');
+                            setButtons(prev => prev.map(btn =>
+                                btn.id === buttonId
+                                    ? {
+                                        ...btn, x: Math.random() * 80 + 10, y: Math.random() * 80 + 10,
+                                        teleporting: true
+                                    }
+                                    : btn
+                            ));
+                            setTimeout(() => {
+                                setButtons(prev => prev.map(btn => ({ ...btn, teleporting: false })));
+                            }, 500);
+                            break;
+
+                        case 'confetti':
+                            createConfetti(buttonX, buttonY);
+                            break;
+
+                        case 'changeColor':
+                            const colors = ['#1f2937', '#7c3aed', '#059669', '#dc2626', '#ea580c',
+                                '#0891b2', '#be185d'];
+                            setBackgroundColor(colors[Math.floor(Math.random() * colors.length)]);
+                            setColorChanges(prev => prev + 1);
+                            break;
+
+                        case 'resize':
+                            setButtons(prev => prev.map(btn =>
+                                btn.id === buttonId
+                                    ? { ...btn, size: 40 + Math.random() * 80 }
+                                    : btn
+                            ));
+                            break;
+
+                        case 'giant':
+                            unlockAchievement('giant');
+                            setButtons(prev => prev.map(btn =>
+                                btn.id === buttonId
+                                    ? { ...btn, size: 150 }
+                                    : btn
+                            ));
+                            break;
+
+                        case 'shrink':
+                            setButtons(prev => prev.map(btn =>
+                                btn.id === buttonId
+                                    ? { ...btn, size: 30 }
+                                    : btn
+                            ));
+                            break;
+
+                        case 'shake':
+                            setShake(true);
+                            setTimeout(() => setShake(false), 1000);
+                            break;
+
+                        case 'ripple':
+                            setRipples(prev => [...prev, {
+                                id: Math.random(), x: buttonX, y: buttonY
+                            }]);
+                            break;
+
+                        case 'rainbow':
+                            let colorIndex = 0;
+                            const rainbowColors = ['#ff0000', '#ff8000', '#ffff00', '#00ff00',
+                                '#0080ff', '#8000ff'];
+                            const interval = setInterval(() => {
+                                setBackgroundColor(rainbowColors[colorIndex]);
+                                colorIndex = (colorIndex + 1) % rainbowColors.length;
+                            }, 200);
+                            setTimeout(() => {
+                                clearInterval(interval);
+                                setBackgroundColor('#1f2937');
+                            }, 3000);
+                            break;
+
+                        case 'spin':
+                            setButtons(prev => prev.map(btn =>
+                                btn.id === buttonId
+                                    ? { ...btn, spinning: true }
+                                    : btn
+                            ));
+                            setTimeout(() => {
+                                setButtons(prev => prev.map(btn => ({ ...btn, spinning: false })));
+                            }, 2000);
+                            break;
+
+                        case 'fireworks':
+                            createFireworks(buttonX, buttonY);
+                            break;
+
+                        case 'meteor':
+                            createMeteors();
+                            break;
+
+                        case 'lightning':
+                            setLightning(true);
+                            setBackgroundColor('#ffffff');
+                            setTimeout(() => setBackgroundColor('#1f2937'), 200);
+                            break;
+
+                        case 'gravity':
+                            setGravity(true);
+                            setButtons(prev => prev.map(btn => ({ ...btn, y: 85 })));
+                            break;
+
+                        case 'matrix':
+                            createMatrix();
+                            setBackgroundColor('#000000');
+                            setTimeout(() => setBackgroundColor('#1f2937'), 5000);
+                            break;
+
+                        case 'snow':
+                            createSnow();
+                            setBackgroundColor('#87ceeb');
+                            setTimeout(() => setBackgroundColor('#1f2937'), 10000);
+                            break;
+
+                        case 'hearts':
+                            createHearts(buttonX, buttonY);
+                            break;
+
+                        case 'zoom':
+                            setZoom(prev => prev === 1 ? 1.5 : 1);
+                            break;
+
+                        case 'rotate':
+                            setRotation(prev => prev + 90);
+                            break;
+
+                        case 'invert':
+                            setInvert(prev => !prev);
+                            break;
+
+                        case 'glitch':
+                            setGlitch(true);
+                            break;
+
+                        case 'disco':
+                            setDisco(true);
+                            break;
+
+                        case 'explode':
+                            createConfetti(buttonX, buttonY);
+                            setButtons(prev => prev.filter(btn => btn.id !== buttonId));
+                            setButtonsDestroyed(prev => prev + 1);
+                            if (buttons.length <= 1) {
+                                setTimeout(() => {
+                                    setButtons([{ id: Math.random(), x: 50, y: 50, size: 80 }]);
+                                    setButtonsCreated(c => c + 1);
+                                }, 500);
+                            }
+                            break;
+
+                        case 'multiply':
+                            for (let i = 0; i < 5; i++) {
+                                setTimeout(() => {
+                                    setButtons(prev => [
+                                        ...prev,
+                                        {
+                                            id: Math.random(),
+                                            x: Math.random() * 80 + 10,
+                                            y: Math.random() * 80 + 10,
+                                            size: 50 + Math.random() * 30
+                                        }
+                                    ]);
+                                    setButtonsCreated(c => c + 1);
+                                }, i * 200);
+                            }
+                            break;
+
+                        case 'portal':
+                            unlockAchievement('portal');
+                            setBackgroundColor('#4a0e4e');
+                            setButtons(prev => prev.map(btn =>
+                                btn.id === buttonId
+                                    ? { ...btn, portal: true }
+                                    : btn
+                            ));
+                            setTimeout(() => {
+                                setButtons(prev => prev.map(btn => ({
+                                    ...btn, portal: false
+                                })));
+                                setBackgroundColor('#1f2937');
+                            }, 2000);
+                            break;
+
+                        case 'neon':
+                            setBackgroundColor('#000000');
+                            setButtons(prev => prev.map(btn =>
+                                btn.id === buttonId
+                                    ? { ...btn, neon: true }
+                                    : btn
+                            ));
+                            setTimeout(() => {
+                                setButtons(prev => prev.map(btn => ({ ...btn, neon: false })));
+                                setBackgroundColor('#1f2937');
+                            }, 3000);
+                            break;
+
+                        default:
+                            createConfetti(buttonX, buttonY);
+                    }
+
+                    const allEffectsUnlocked = effects.every(effect =>
+                        effectCounts[effect] > 0);
+                    if (allEffectsUnlocked) {
+                        unlockAchievement('all_effects');
+                    }
+
+                    setTimeout(() => {
+                        if (Date.now() - lastClickTime >= 1000) {
+                            setWaitingStart(Date.now());
+                        }
+                    }, 1000);
+                };
+
+            return (
+                <div className={`min-h-screen transition-all duration-500 relative overflow-hidden ${shake ? 'animate-pulse' : ''} ${invert ? 'invert' : ''} ${glitch ? 'animate-pulse' : ''}`} style={{
+                        backgroundColor, transform: `scale(${zoom}) rotate(${rotation}deg)`, filter: glitch ? 'hue-rotate(180deg) contrast(200%)' : 'none'
+                    }}>
+                    {/* Lightning flash */}
+                    {lightning && (
+                        <div
+                            className="absolute inset-0 bg-white opacity-90 z-50 animate-ping" />
+                    )}
+
+                    {/* Contador de clicks */}
+                    <div
+                        className="absolute top-4 left-4 text-white text-xl font-bold z-20 bg-black bg-opacity-50 rounded-lg px-3 py-1">
+                        Clicks: {clickCount}
+                    </div>
+
+                    {/* Logros totales */}
+                    <div
+                        className="absolute top-4 left-1/2 transform -translate-x-1/2 text-white text-sm font-bold z-20 bg-black bg-opacity-50 rounded-lg px-3 py-1 flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-yellow-400" />
+                        {achievements.size}/{Object.keys(achievementsList).length}
+                        Logros
+                    </div>
+
+                    {/* Botón de logros */}
+                    <button onClick={() =>
+                        setShowAchievements(!showAchievements)}
+                        className="absolute top-4 right-4 bg-yellow-500
+                                                                hover:bg-yellow-600 text-black px-4 py-2 rounded-lg
+                                                                transition-all duration-200 z-20 flex items-center gap-2
+                                                                font-bold"
+                    >
+                        <Trophy className="w-4 h-4" />
+                        Logros
+                    </button>
+
+                    {/* Notificación de logro */}
+                    {recentAchievement && (
+                        <div
+                            className="fixed top-20 right-4 bg-yellow-500 text-black p-4 rounded-lg shadow-lg z-50 animate-bounce">
+                            <div className="flex items-center gap-2">
+                                <Trophy className="w-6 h-6" />
+                                <div>
+                                    <div className="font-bold">¡Logro Desbloqueado!
+                                    </div>
+                                    <div className="text-sm">
+                                        {achievementsList[recentAchievement]?.icon}
+                                        {achievementsList[recentAchievement]?.name}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Panel de logros */}
+                    {showAchievements && (
+                        <div
+                            className="fixed inset-4 bg-black bg-opacity-90 rounded-lg z-50 p-6 overflow-y-auto">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2
+                                    className="text-2xl font-bold text-white flex items-center gap-2">
+                                    <Trophy className="text-yellow-400" />
+                                    Logros
+                                    ({achievements.size}/{Object.keys(achievementsList).length})
+                                </h2>
+                                <button onClick={() => setShowAchievements(false)}
+                                    className="text-red-500 hover:text-red-600
+                                                                        text-6xl font-bold bg-white bg-opacity-20 rounded-lg px-3 py-1"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <div
+                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {Object.entries(achievementsList).map(([key,
+                                    achievement]) => (
+                                    <div key={key} className={`p-4 rounded-lg border-2
+                                                                        transition-all ${achievements.has(key) ?
+                                            achievement.rare
+                                                ? 'bg-gradient-to-br from-purple-400 to-pink-400 border-purple-600 text-white shadow-lg'
+                                                : 'bg-yellow-100 border-yellow-400 text-black'
+                                            : 'bg-gray-800 border-gray-600 text-gray-400'
+                                        }`}>
+                                        <div
+                                            className="text-2xl mb-2 flex items-center gap-2">
+                                            {achievement.icon}
+                                            {achievement.rare && achievements.has(key)
+                                                && <span className="text-sm">✨</span>}
+                                        </div>
+                                        <div className="font-bold">{achievement.name}
+                                        </div>
+                                        <div className="text-sm">{achievement.desc}
+                                        </div>
+                                        {achievements.has(key) && (
+                                            <div className={`text-xs mt-1 ${achievement.rare
+                                                ? 'text-purple-200' : 'text-green-600'}`}>
+                                                ✓ {achievement.rare ? 'Logro Raro Desbloqueado'
+                                                                            : 'Desbloqueado'}
+                                            </div>
+                                        )}
+                                        {!achievements.has(key) && achievement.rare && (
+                                            <div className="text-xs text-purple-400 mt-1">⭐
+                                                Logro Raro</div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="mt-6 text-white text-sm">
+                                <div
+                                    className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                                    <div>
+                                        <div className="font-bold text-lg">
+                                            {clickCount}</div>
+                                        <div>Total Clicks</div>
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-lg">
+                                            {buttonsCreated}</div>
+                                        <div>Botones Creados</div>
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-lg">
+                                            {buttonsDestroyed}</div>
+                                        <div>Botones Destruidos</div>
+                                    </div>
+                                    <div>
+                                        <div className="font-bold text-lg">
+                                            {consecutiveDays}</div>
+                                        <div>Días Consecutivos</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Botones rojos */}
+                    {buttons.map((button) => {
+                        const buttonX = (window.innerWidth * button.x) / 100;
+                        const buttonY = (window.innerHeight * button.y) / 100;
+
+                        return (
+                            <button key={button.id} onClick={() =>
+                                handleButtonClick(button.id, buttonX, buttonY)}
+                                className={`absolute transform -translate-x-1/2 -translate-y-1/2 bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 active:scale-95 ${button.spinning ? 'animate-spin' : ''} ${button.teleporting ? 'animate-ping' : ''} ${button.portal ? 'animate-pulse shadow-purple-500 shadow-2xl' : ''} ${button.neon ? 'shadow-red-500 shadow-2xl animate-pulse' : ''}`}
+                                                                style={{
+                        left: `${button.x}%`,
+                        top: `${button.y}%`,
+                        width: `${button.size}px`,
+                        height: `${button.size}px`,
+                        boxShadow: button.neon ? '0 0 20px #ff0000, 0 0 40px #ff0000, 0 0 60px #ff0000' : undefined
+                    }}
+                                                                >
+                    <span
+                        className="text-white font-bold text-lg">¡CLICK!</span>
+                </button>
+            );
+        })}
+
+        {/* Efectos visuales */ }
+
+        {/* Confetti */ }
+        {
+            confetti.map((piece) => (
+                <div key={piece.id}
+                    className="absolute w-3 h-3 animate-bounce" style={{
+                        left: piece.x, top: piece.y, backgroundColor:
+                            piece.color, animationDelay: `${piece.delay}s`,
+                        animationDuration: '3s'
+                    }} />
+            ))
+        }
+
+        {/* Ripples */ }
+        {
+            ripples.map((ripple) => (
+                <div key={ripple.id}
+                    className="absolute border-4 border-white rounded-full animate-ping"
+                    style={{
+                        left: ripple.x - 50, top: ripple.y - 50,
+                        width: '100px', height: '100px',
+                        animationDuration: '1s'
+                    }} />
+            ))
+        }
+
+        {/* Fireworks */ }
+        {
+            fireworks.map((firework) => (
+                <div key={firework.id}
+                    className="absolute w-2 h-2 animate-ping" style={{
+                        left:
+                            firework.x, top: firework.y, backgroundColor:
+                            firework.color, animationDelay: `${firework.delay}s`,
+                        animationDuration: '2s'
+                    }} />
+            ))
+        }
+
+        {/* Meteors */ }
+        {
+            meteors.map((meteor) => (
+                <div key={meteor.id}
+                    className="absolute w-4 h-4 bg-orange-500 rounded-full animate-bounce"
+                    style={{
+                        left: `${meteor.x}%`, top: '-20px',
+                        animationDelay: `${meteor.delay}s`,
+                        animationDuration: '3s', animationIterationCount: '1',
+                        animationFillMode: 'forwards'
+                    }} />
+            ))
+        }
+
+        {/* Matrix */ }
+        {
+            matrix.map((char) => (
+                <div key={char.id}
+                    className="absolute text-green-400 font-mono text-xl animate-pulse"
+                    style={{
+                        left: `${char.x}%`, top: '-20px',
+                        animationDelay: `${char.delay}s`,
+                        animationDuration: '5s'
+                    }}>
+                    {char.char}
+                </div>
+            ))
+        }
+
+        {/* Snow */ }
+        {
+            snow.map((flake) => (
+                <div key={flake.id}
+                    className="absolute text-white animate-bounce" style={{
+                        left: `${flake.x}%`, top: '-20px', fontSize:
+                            `${flake.size}px`, animationDelay: `${flake.delay}s`,
+                        animationDuration: '8s'
+                    }}>
+                    ❄
+                </div>
+            ))
+        }
+
+        {/* Hearts */ }
+        {
+            hearts.map((heart) => (
+                <div key={heart.id}
+                    className="absolute text-pink-500 text-2xl animate-bounce"
+                    style={{
+                        left: heart.x, top: heart.y, animationDelay:
+                            `${heart.delay}s`, animationDuration: '2s'
+                    }}>
+                    💖
+                </div>
+            ))
+        }
+
+        {/* Instrucciones */ }
+        <div
+            className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-center bg-black bg-opacity-50 rounded-lg p-4 max-w-md z-10">
+        </div>
+                                                        </div>
+                                                        );
+                                                        };
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<RedButtonApp />);
